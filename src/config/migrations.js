@@ -767,6 +767,116 @@ const migrations = [
         });
       });
     }
+  },
+  {
+    version: 22,
+    name: 'create_contracts_table',
+    description: 'Create contracts table for managing PDF contract documents',
+    up: (db) => {
+      return new Promise((resolve, reject) => {
+        db.run(`
+          CREATE TABLE IF NOT EXISTS contracts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            file_name TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            created_by INTEGER,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+          )
+        `, (err) => {
+          if (err) {
+            console.error('Create contracts table error:', err.message);
+            return reject(err);
+          }
+          
+          // Create index for faster queries
+          db.run(`CREATE INDEX IF NOT EXISTS idx_contracts_created_at ON contracts(created_at)`, (indexErr) => {
+            if (indexErr) console.error('Create contracts index error:', indexErr.message);
+            resolve();
+          });
+        });
+      });
+    }
+  },
+  {
+    version: 23,
+    name: 'add_contracts_extended_fields',
+    description: 'Add extended fields to contracts table (dates, type, status, value, party info)',
+    up: (db) => {
+      return new Promise((resolve, reject) => {
+        const alterQueries = [
+          `ALTER TABLE contracts ADD COLUMN start_date TEXT`,
+          `ALTER TABLE contracts ADD COLUMN expiry_date TEXT`,
+          `ALTER TABLE contracts ADD COLUMN contract_type TEXT DEFAULT 'taşımacılık'`,
+          `ALTER TABLE contracts ADD COLUMN status TEXT DEFAULT 'aktif'`,
+          `ALTER TABLE contracts ADD COLUMN contract_value REAL`,
+          `ALTER TABLE contracts ADD COLUMN currency TEXT DEFAULT 'EUR'`,
+          `ALTER TABLE contracts ADD COLUMN party_name TEXT`,
+          `ALTER TABLE contracts ADD COLUMN party_contact TEXT`,
+          `ALTER TABLE contracts ADD COLUMN party_email TEXT`
+        ];
+        
+        let completed = 0;
+        alterQueries.forEach(query => {
+          db.run(query, (err) => {
+            // Duplicate column hatası normaldir, yoksay
+            if (err && !err.message.includes('duplicate column')) {
+              console.error('ALTER contracts error:', err.message);
+            }
+            completed++;
+            if (completed === alterQueries.length) {
+              // Create indexes
+              db.run(`CREATE INDEX IF NOT EXISTS idx_contracts_expiry_date ON contracts(expiry_date)`, () => {
+                db.run(`CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status)`, () => {
+                  db.run(`CREATE INDEX IF NOT EXISTS idx_contracts_contract_type ON contracts(contract_type)`, () => {
+                    resolve();
+                  });
+                });
+              });
+            }
+          });
+        });
+      });
+    }
+  },
+  {
+    version: 24,
+    name: 'create_contract_files_table',
+    description: 'Create contract_files table for multiple PDF uploads per contract',
+    up: (db) => {
+      return new Promise((resolve, reject) => {
+        db.run(`
+          CREATE TABLE IF NOT EXISTS contract_files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            contract_id INTEGER NOT NULL,
+            file_name TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            file_size INTEGER,
+            description TEXT,
+            version INTEGER DEFAULT 1,
+            uploaded_at TEXT DEFAULT (datetime('now')),
+            uploaded_by INTEGER,
+            FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
+            FOREIGN KEY (uploaded_by) REFERENCES users(id)
+          )
+        `, (err) => {
+          if (err && !err.message.includes('already exists')) {
+            console.error('Create contract_files table error:', err.message);
+            return reject(err);
+          }
+          
+          // Create indexes
+          db.run(`CREATE INDEX IF NOT EXISTS idx_contract_files_contract_id ON contract_files(contract_id)`, () => {
+            db.run(`CREATE INDEX IF NOT EXISTS idx_contract_files_uploaded_at ON contract_files(uploaded_at DESC)`, () => {
+              console.log('[Migration] contract_files table created');
+              resolve();
+            });
+          });
+        });
+      });
+    }
   }
 ];
 

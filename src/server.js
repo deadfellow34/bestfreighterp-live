@@ -40,6 +40,7 @@ const driverApiRoutes = require('./routes/driverApiRoutes');
 const driverLocationRoutes = require('./routes/driverLocationRoutes');
 const driverMessageRoutes = require('./routes/driverMessageRoutes');
 const lucaRoutes = require('./routes/lucaRoutes');
+const contractRoutes = require('./routes/contractRoutes');
 const LucaInvoiceModel = require('./models/lucaInvoiceModel');
 
 const app = express();
@@ -345,6 +346,9 @@ app.use('/driver-messages', driverMessageRoutes);
 // /luca - Luca e-Fatura integration (both /luca for page and /api/luca for API)
 app.use('/luca', lucaRoutes);
 app.use('/api/luca', lucaRoutes);
+
+// /contracts - Sözleşmeler (PDF sözleşme yönetimi)
+app.use('/contracts', contractRoutes);
 
 // /uid-base - UID Database management page
 app.get('/uid-base', ensureAuth, (req, res, next) => {
