@@ -109,6 +109,40 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Latest release banner */
+.version-block.latest {
+  border: 1px solid rgba(59,130,246,0.28);
+  box-shadow: 0 30px 80px rgba(59,130,246,0.08);
+}
+
+.version-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.release-badge {
+  background: linear-gradient(135deg,#ec4899,#8b5cf6,#3b82f6);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  box-shadow: 0 6px 20px rgba(99,102,241,0.12);
+}
+
+.release-info .release-version {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.release-info .release-date {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
 .version-block::before {
   content: '';
   position: absolute;
